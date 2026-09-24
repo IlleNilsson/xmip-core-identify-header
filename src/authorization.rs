@@ -5,9 +5,8 @@
 //! is the capability's (`identify::authorization`), so this gate and the
 //! second read one header alike.
 
-use identify::authorization::{
-    self, BASIC_CREDENTIAL, BEARER_TOKEN, DIGEST_RESPONSE, bearer_short, parameter,
-};
+use identify::authorization::{self, bearer_short, parameter};
+use identify::evidence;
 use identify::{IdentifyError, Presented};
 use xcore::mechanism;
 
@@ -22,7 +21,8 @@ pub fn present(value: &str) -> Result<Option<Presented>, IdentifyError> {
     let claim = match scheme.to_ascii_lowercase().as_str() {
         "basic" => {
             let (user, _) = authorization::basic(credential)?;
-            Presented::passed(mechanism::username(), user).with_proof(BASIC_CREDENTIAL, credential)
+            Presented::passed(mechanism::username(), user)
+                .with_proof(evidence::BASIC_CREDENTIAL, credential)
         }
         "bearer" => bearer(credential)?,
         "digest" => digest(credential)?,
@@ -40,7 +40,8 @@ fn bearer(token: &str) -> Result<Presented, IdentifyError> {
         return Err(IdentifyError::new("the Bearer authorization has no token"));
     }
 
-    Ok(Presented::passed(mechanism::bearer(), bearer_short(token)).with_proof(BEARER_TOKEN, token))
+    Ok(Presented::passed(mechanism::bearer(), bearer_short(token))
+        .with_proof(evidence::BEARER_TOKEN, token))
 }
 
 /// RFC 7616: a parameter list whose `username` is the claim and whose whole
@@ -49,7 +50,8 @@ fn digest(parameters: &str) -> Result<Presented, IdentifyError> {
     let username = parameter(parameters, "username")
         .ok_or_else(|| IdentifyError::new("the Digest authorization names no username"))?;
 
-    Ok(Presented::passed(mechanism::username(), username).with_proof(DIGEST_RESPONSE, parameters))
+    Ok(Presented::passed(mechanism::username(), username)
+        .with_proof(evidence::DIGEST_RESPONSE, parameters))
 }
 
 #[cfg(test)]
@@ -66,7 +68,7 @@ mod tests {
 
         assert_eq!(claim.mechanism.name(), "username");
         assert_eq!(claim.value, "Mufasa");
-        assert_eq!(claim.proof(DIGEST_RESPONSE), Some(list));
+        assert_eq!(claim.proof(evidence::DIGEST_RESPONSE), Some(list));
         assert_eq!(
             claim.evidence,
             vec![("authorization.scheme".to_string(), "Digest".to_string())]
