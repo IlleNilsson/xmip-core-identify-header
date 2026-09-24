@@ -35,11 +35,9 @@
 
 pub mod authorization;
 
+use context::property::HTTP_HEADER_PREFIX;
 use identify::{IdentifyError, Presented, StreamArrival, TransportIdentifier};
 use xcore::{Arriving, Mechanism};
-
-/// The prefix the transport puts a request header on the arrival under.
-pub const HEADER_PREFIX: &str = "http.header.";
 
 /// Reads one named header.
 #[derive(Clone, Debug)]
@@ -55,7 +53,7 @@ impl HeaderIdentifier {
     pub fn named(name: &str) -> Self {
         let name = name.trim().to_ascii_lowercase();
         Self {
-            property: format!("{HEADER_PREFIX}{name}"),
+            property: format!("{HTTP_HEADER_PREFIX}{name}"),
             name,
         }
     }
