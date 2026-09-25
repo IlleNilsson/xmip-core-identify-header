@@ -35,7 +35,7 @@
 
 pub mod authorization;
 
-use context::property::HTTP_HEADER_PREFIX;
+use context::property;
 use identify::{IdentifyError, Presented, StreamArrival, TransportIdentifier};
 use xcore::{Arriving, Mechanism};
 
@@ -53,7 +53,7 @@ impl HeaderIdentifier {
     pub fn named(name: &str) -> Self {
         let name = name.trim().to_ascii_lowercase();
         Self {
-            property: format!("{HTTP_HEADER_PREFIX}{name}"),
+            property: property::header("http", &name),
             name,
         }
     }
