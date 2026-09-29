@@ -5,7 +5,7 @@
 //! The transport puts each request header on the arrival as
 //! `http.header.<name>`, the name lowercased, and the identifier is built
 //! naming one of them. For most headers the value is the claim as written —
-//! an `X-Partner-Id`, an `X-Client-Name` — under
+//! an `X-Party-Id`, an `X-Client-Name` — under
 //! [`xcore::mechanism::header`], passed and nothing behind it.
 //!
 //! `Authorization` is the exception, and the identifier is scheme-aware for
@@ -110,29 +110,26 @@ mod tests {
     #[test]
     fn a_named_header_is_the_claim_as_written() {
         let stream = stream();
-        let facts = facts(&[("http.header.x-partner-id", "partner-x")]);
+        let facts = facts(&[("http.header.x-party-id", "party-x")]);
         let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
 
-        let claim = HeaderIdentifier::named("X-Partner-Id")
+        let claim = HeaderIdentifier::named("X-Party-Id")
             .identify(&arrival)
             .expect("read")
             .expect("a claim");
 
         assert_eq!(claim.mechanism.name(), "header");
-        assert_eq!(claim.value, "partner-x");
+        assert_eq!(claim.value, "party-x");
         assert_eq!(
             claim.evidence,
-            vec![("header.name".to_string(), "x-partner-id".to_string())]
+            vec![("header.name".to_string(), "x-party-id".to_string())]
         );
     }
 
     #[test]
     fn a_basic_authorization_presents_the_user_and_keeps_the_credential_as_proof() {
         let stream = stream();
-        let facts = facts(&[(
-            "http.header.authorization",
-            "Basic cGFydG5lci14OnMzY3IzdA==",
-        )]);
+        let facts = facts(&[("http.header.authorization", "Basic cGFydHkteDpzM2NyM3Q=")]);
         let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
 
         let claim = HeaderIdentifier::named("Authorization")
@@ -141,13 +138,13 @@ mod tests {
             .expect("a claim");
 
         assert_eq!(claim.mechanism.name(), "username");
-        assert_eq!(claim.value, "partner-x");
+        assert_eq!(claim.value, "party-x");
         assert_eq!(
             claim.proof("basic.credential"),
-            Some("cGFydG5lci14OnMzY3IzdA==")
+            Some("cGFydHkteDpzM2NyM3Q=")
         );
         assert!(
-            !format!("{claim:?}").contains("cGFydG5lci14"),
+            !format!("{claim:?}").contains("cGFydHkteDpz"),
             "the credential is not printed"
         );
     }
@@ -191,7 +188,7 @@ mod tests {
         let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
 
         assert!(
-            HeaderIdentifier::named("X-Partner-Id")
+            HeaderIdentifier::named("X-Party-Id")
                 .identify(&arrival)
                 .expect("read")
                 .is_none()
@@ -214,12 +211,11 @@ mod tests {
     #[test]
     fn a_scheduled_pickup_carries_no_request_headers() {
         let stream = stream();
-        let facts = facts(&[("http.header.x-partner-id", "partner-x")]);
-        let arrival =
-            StreamArrival::new(&stream, Arriving::Scheduled, "https://partner/out", &facts);
+        let facts = facts(&[("http.header.x-party-id", "party-x")]);
+        let arrival = StreamArrival::new(&stream, Arriving::Scheduled, "https://party/out", &facts);
 
         assert!(
-            HeaderIdentifier::named("X-Partner-Id")
+            HeaderIdentifier::named("X-Party-Id")
                 .identify(&arrival)
                 .expect("read")
                 .is_none()
