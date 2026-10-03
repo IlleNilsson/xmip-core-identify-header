@@ -93,12 +93,6 @@ impl TransportIdentifier for HeaderIdentifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use stream::Stream;
-    use xcore::StreamId;
-
-    fn stream() -> Stream {
-        Stream::new(StreamId::new(1), b"<order/>".to_vec(), None)
-    }
 
     fn facts(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
         pairs
@@ -109,9 +103,8 @@ mod tests {
 
     #[test]
     fn a_named_header_is_the_claim_as_written() {
-        let stream = stream();
         let facts = facts(&[("http.header.x-party-id", "party-x")]);
-        let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
+        let arrival = StreamArrival::new(Arriving::Pushed, "https://xmip/in", &facts);
 
         let claim = HeaderIdentifier::named("X-Party-Id")
             .identify(&arrival)
@@ -128,9 +121,8 @@ mod tests {
 
     #[test]
     fn a_basic_authorization_presents_the_user_and_keeps_the_credential_as_proof() {
-        let stream = stream();
         let facts = facts(&[("http.header.authorization", "Basic cGFydHkteDpzM2NyM3Q=")]);
-        let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
+        let arrival = StreamArrival::new(Arriving::Pushed, "https://xmip/in", &facts);
 
         let claim = HeaderIdentifier::named("Authorization")
             .identify(&arrival)
@@ -151,9 +143,8 @@ mod tests {
 
     #[test]
     fn a_bearer_token_is_presented_short_and_carried_whole_as_proof() {
-        let stream = stream();
         let facts = facts(&[("http.header.authorization", "Bearer mF_9.B5f-4.1JqM")]);
-        let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
+        let arrival = StreamArrival::new(Arriving::Pushed, "https://xmip/in", &facts);
 
         let claim = HeaderIdentifier::named("authorization")
             .identify(&arrival)
@@ -167,10 +158,9 @@ mod tests {
 
     #[test]
     fn a_negotiate_or_ntlm_authorization_is_somebody_elses_to_read() {
-        let stream = stream();
         for value in ["Negotiate YIIB...", "NTLM TlRMTVNTUAAD..."] {
             let facts = facts(&[("http.header.authorization", value)]);
-            let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
+            let arrival = StreamArrival::new(Arriving::Pushed, "https://xmip/in", &facts);
 
             assert!(
                 HeaderIdentifier::named("Authorization")
@@ -183,9 +173,8 @@ mod tests {
 
     #[test]
     fn an_arrival_without_the_header_presents_nothing() {
-        let stream = stream();
         let facts = facts(&[("http.header.x-other", "value")]);
-        let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
+        let arrival = StreamArrival::new(Arriving::Pushed, "https://xmip/in", &facts);
 
         assert!(
             HeaderIdentifier::named("X-Party-Id")
@@ -197,9 +186,8 @@ mod tests {
 
     #[test]
     fn a_basic_credential_that_does_not_decode_is_an_error() {
-        let stream = stream();
         let facts = facts(&[("http.header.authorization", "Basic not*base64")]);
-        let arrival = StreamArrival::new(&stream, Arriving::Pushed, "https://xmip/in", &facts);
+        let arrival = StreamArrival::new(Arriving::Pushed, "https://xmip/in", &facts);
 
         let failure = HeaderIdentifier::named("Authorization")
             .identify(&arrival)
@@ -210,9 +198,8 @@ mod tests {
 
     #[test]
     fn a_scheduled_pickup_carries_no_request_headers() {
-        let stream = stream();
         let facts = facts(&[("http.header.x-party-id", "party-x")]);
-        let arrival = StreamArrival::new(&stream, Arriving::Scheduled, "https://party/out", &facts);
+        let arrival = StreamArrival::new(Arriving::Scheduled, "https://party/out", &facts);
 
         assert!(
             HeaderIdentifier::named("X-Party-Id")
