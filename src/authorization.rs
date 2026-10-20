@@ -14,7 +14,7 @@ use xcore::mechanism;
 ///
 /// # Errors
 ///
-/// Where the scheme is recognised and the credential after it cannot be read.
+/// Where the scheme is recognized and the credential after it cannot be read.
 pub fn present(value: &str) -> Result<Option<Presented>, IdentifyError> {
     let (scheme, credential) = authorization::scheme(value);
 
